@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <concealer/autoware_universe.hpp>
+#include <concealer/autoware_vehicle_interface.hpp>
 #include <filesystem>
 #include <geometry/quaternion/euler_to_quaternion.hpp>
 #include <geometry/quaternion/get_rotation.hpp>
@@ -30,7 +30,7 @@ EgoEntitySimulation::EgoEntitySimulation(
   const traffic_simulator_msgs::msg::VehicleParameters & parameters, double step_time,
 
   const rclcpp::Parameter & use_sim_time, const bool consider_acceleration_by_road_slope)
-: autoware(std::make_unique<concealer::AutowareUniverse>(
+: autoware(std::make_unique<concealer::AutowareVehicleInterface>(
     common::getParameter<bool>("simulate_localization"))),
   vehicle_model_type_(getVehicleModelType()),
   wheel_base_(common::getParameter(

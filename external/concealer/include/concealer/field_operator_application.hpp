@@ -26,7 +26,7 @@
 #include <autoware_control_msgs/msg/control.hpp>
 #include <autoware_vehicle_msgs/msg/gear_command.hpp>
 #include <autoware_vehicle_msgs/msg/turn_indicators_command.hpp>
-#include <concealer/autoware_universe.hpp>
+#include <concealer/autoware_vehicle_interface.hpp>
 #include <concealer/legacy_autoware_state.hpp>
 #include <concealer/path_with_lane_id.hpp>
 #include <concealer/publisher.hpp>

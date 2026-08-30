@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef CONCEALER__AUTOWARE_UNIVERSE_HPP_
-#define CONCEALER__AUTOWARE_UNIVERSE_HPP_
+#ifndef CONCEALER__AUTOWARE_VEHICLE_INTERFACE_HPP_
+#define CONCEALER__AUTOWARE_VEHICLE_INTERFACE_HPP_
 
 #include <atomic>
 #include <autoware_control_msgs/msg/control.hpp>
@@ -38,8 +38,8 @@
 
 namespace concealer
 {
-class AutowareUniverse : public rclcpp::Node,
-                         public ContinuousTransformBroadcaster<AutowareUniverse>
+class AutowareVehicleInterface : public rclcpp::Node,
+                         public ContinuousTransformBroadcaster<AutowareVehicleInterface>
 {
 public:
   // clang-format off
@@ -93,9 +93,9 @@ private:
   std::thread spinner;
 
 public:
-  CONCEALER_PUBLIC explicit AutowareUniverse(bool);
+  CONCEALER_PUBLIC explicit AutowareVehicleInterface(bool);
 
-  ~AutowareUniverse();
+  ~AutowareVehicleInterface();
 
   auto rethrow() -> void;
 
@@ -109,4 +109,4 @@ public:
 };
 }  // namespace concealer
 
-#endif  // CONCEALER__AUTOWARE_UNIVERSE_HPP_
+#endif  // CONCEALER__AUTOWARE_VEHICLE_INTERFACE_HPP_

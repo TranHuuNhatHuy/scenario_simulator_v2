@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <concealer/autoware_universe.hpp>
+#include <concealer/autoware_vehicle_interface.hpp>
 
 namespace concealer
 {
@@ -22,9 +22,9 @@ namespace concealer
    apart.
 */
 // clang-format off
-AutowareUniverse::AutowareUniverse(bool simulate_localization) try
+AutowareVehicleInterface::AutowareVehicleInterface(bool simulate_localization) try
 : rclcpp::Node("concealer", "simulation"),
-  ContinuousTransformBroadcaster<AutowareUniverse>(simulate_localization? "base_link" : "base_link_ground_truth"),
+  ContinuousTransformBroadcaster<AutowareVehicleInterface>(simulate_localization? "base_link" : "base_link_ground_truth"),
   getCommand("/control/command/control_cmd", rclcpp::QoS(1), *this),
   getGearCommand("/control/command/gear_cmd", rclcpp::QoS(1), *this),
   getTurnIndicatorsCommand("/control/command/turn_indicators_cmd", rclcpp::QoS(1), *this),
@@ -176,20 +176,20 @@ catch (...)
 }
 // clang-format on
 
-AutowareUniverse::~AutowareUniverse()
+AutowareVehicleInterface::~AutowareVehicleInterface()
 {
   is_stop_requested.store(true);
   spinner.join();
 }
 
-auto AutowareUniverse::rethrow() -> void
+auto AutowareVehicleInterface::rethrow() -> void
 {
   if (is_thrown.load()) {
     throw thrown;
   }
 }
 
-auto AutowareUniverse::getVehicleCommand() const -> std::tuple<double, double, double, double, int>
+auto AutowareVehicleInterface::getVehicleCommand() const -> std::tuple<double, double, double, double, int>
 {
   const auto control_command = getCommand();
 
@@ -225,7 +225,7 @@ auto AutowareUniverse::getVehicleCommand() const -> std::tuple<double, double, d
     gear_command.command);
 }
 
-auto AutowareUniverse::getRouteLanelets() const -> std::vector<std::int64_t>
+auto AutowareVehicleInterface::getRouteLanelets() const -> std::vector<std::int64_t>
 {
   std::vector<std::int64_t> ids{};
   for (const auto & point : getPathWithLaneId().points) {
@@ -234,14 +234,14 @@ auto AutowareUniverse::getRouteLanelets() const -> std::vector<std::int64_t>
   return ids;
 }
 
-auto AutowareUniverse::getControlModeReport() const -> ControlModeReport
+auto AutowareVehicleInterface::getControlModeReport() const -> ControlModeReport
 {
   ControlModeReport message;
   message.mode = current_control_mode.load();
   return message;
 }
 
-auto AutowareUniverse::setManualMode() -> void
+auto AutowareVehicleInterface::setManualMode() -> void
 {
   current_control_mode.store(ControlModeReport::MANUAL);
 }

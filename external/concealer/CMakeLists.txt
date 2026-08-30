@@ -14,7 +14,7 @@ find_package(ament_cmake_auto REQUIRED)
 ament_auto_find_build_dependencies()
 
 ament_auto_add_library(${PROJECT_NAME} SHARED
-  src/autoware_universe.cpp
+  src/autoware_vehicle_interface.cpp
   src/execute.cpp
   src/field_operator_application.cpp
   src/is_package_exists.cpp
