@@ -70,30 +70,40 @@ def on_stdout_output(event: launch.Event) -> None:
             print(Color.GREEN + "Scenario Succeed" + Color.END)
 
 
+# Kept in step with test_runner/scenario_test_runner/launch/scenario_test_runner.launch.py and
+# with common/architecture_type. See that file for why awf/core is the default here.
+ARCHITECTURES = {
+    "awf/core/1.0.0": {
+        "package": "autoware_core_scenario_launch",
+        "file": "core_scenario_simulator.launch.xml",
+    },
+    "awf/universe/20250130": {
+        "package": "autoware_launch",
+        "file": "planning_simulator.launch.xml",
+    },
+}
+
+DEFAULT_ARCHITECTURE_TYPE = "awf/core/1.0.0"
+
+
 def architecture_types():
-    return ["awf/universe/20230906", "awf/universe/20240605"]
+    return list(ARCHITECTURES)
+
+
+def _architecture(architecture_type):
+    if architecture_type not in ARCHITECTURES:
+        raise KeyError(
+            f"architecture_type := {architecture_type} is not supported. Choose one of {architecture_types()}."
+        )
+    return ARCHITECTURES[architecture_type]
 
 
 def default_autoware_launch_package_of(architecture_type):
-    if architecture_type not in architecture_types():
-        raise KeyError(
-            f"architecture_type := {architecture_type} is not supported. Choose one of {architecture_types()}."
-        )
-    return {
-        "awf/universe/20230906": "autoware_launch",
-        "awf/universe/20240605": "autoware_launch",
-    }[architecture_type]
+    return _architecture(architecture_type)["package"]
 
 
 def default_autoware_launch_file_of(architecture_type):
-    if architecture_type not in architecture_types():
-        raise KeyError(
-            f"architecture_type := {architecture_type} is not supported. Choose one of {architecture_types()}."
-        )
-    return {
-        "awf/universe/20230906": "planning_simulator.launch.xml",
-        "awf/universe/20240605": "planning_simulator.launch.xml",
-    }[architecture_type]
+    return _architecture(architecture_type)["file"]
 
 
 def default_rviz_config_file():
@@ -102,7 +112,7 @@ def default_rviz_config_file():
 
 def launch_setup(context, *args, **kwargs):
     # fmt: off
-    architecture_type                   = LaunchConfiguration("architecture_type",                      default="awf/universe/20240605")
+    architecture_type                   = LaunchConfiguration("architecture_type",                      default=DEFAULT_ARCHITECTURE_TYPE)
     autoware_launch_file                = LaunchConfiguration("autoware_launch_file",                   default=default_autoware_launch_file_of(architecture_type.perform(context)))
     autoware_launch_package             = LaunchConfiguration("autoware_launch_package",                default=default_autoware_launch_package_of(architecture_type.perform(context)))
     consider_acceleration_by_road_slope = LaunchConfiguration("consider_acceleration_by_road_slope",    default=False)

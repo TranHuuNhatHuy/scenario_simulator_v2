@@ -10,6 +10,7 @@
   <buildtool_depend>ament_cmake</buildtool_depend>
   <buildtool_depend>ament_cmake_auto</buildtool_depend>
 
+  <depend>architecture_type</depend>
   <depend>traffic_simulator</depend>
   <depend>simple_sensor_simulator</depend>
   <depend>simple_junit</depend>

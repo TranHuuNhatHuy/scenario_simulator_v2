@@ -41,8 +41,8 @@ class RandomTestRunnerLaunch(object):
         self.autoware_launch_arguments = {
             # autoware arguments #
             "architecture_type": {
-                "default": "awf/universe/20230906", "description": "Autoware architecture type",
-                "values": ["awf/universe/20230906", "awf/universe/20240605"]},
+                "default": "awf/core/1.0.0", "description": "Autoware architecture type",
+                "values": ["awf/core/1.0.0", "awf/universe/20250130"]},
             "sensor_model": {"default": "sample_sensor_kit", "description": "Ego sensor model"},
             "vehicle_model": {"default": "sample_vehicle", "description": "Ego vehicle model"},
             "autoware_launch_file": {"default": "planning_simulator.launch.xml", "description": "Launch file name for Autoware running"},
@@ -166,8 +166,9 @@ class RandomTestRunnerLaunch(object):
                   "Parameters passed there override passed via arguments".format(test_param_file_path))
             parameters.append(test_param_file_path)
 
-        # not tested for other architectures but required for "awf/universe"
-        if "awf/universe" in autoware_architecture:
+        # Both awf/core and awf/universe read vehicle geometry from a <model>_description
+        # package; autoware_core ships autoware_sample_vehicle_description with the same layout.
+        if autoware_architecture.startswith(("awf/core", "awf/universe")):
             vehicle_model = self.autoware_launch_configuration["vehicle_model"].perform(context)
             if vehicle_model:
                 vehicle_model_description_dir = get_package_share_directory(vehicle_model + "_description")

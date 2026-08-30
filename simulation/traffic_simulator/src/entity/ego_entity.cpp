@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <architecture_type/architecture_type.hpp>
 #include <boost/lexical_cast.hpp>
 #include <concealer/field_operator_application.hpp>
 #include <concealer/launch.hpp>
@@ -40,45 +41,75 @@ EgoEntity::EgoEntity(
   const Configuration & configuration,
   const rclcpp::node_interfaces::NodeParametersInterface::SharedPtr & node_parameters)
 : VehicleEntity(name, entity_status, parameters), FieldOperatorApplication([&]() {
-    if (const auto architecture_type = common::getParameter<std::string>(
-          node_parameters, "architecture_type", "awf/universe/20240605");
-        architecture_type.find("awf/universe") != std::string::npos) {
-      auto parameters =
-        common::getParameter<std::vector<std::string>>(node_parameters, "autoware.", {});
-      std::string vehicle_id;
+    /*
+       Which launch file describes "Autoware" is the one place where the two supported
+       architectures genuinely differ, because their launch interfaces differ.
 
-      try {
-        vehicle_id = common::getParameter<std::string>(node_parameters, "vehicle_id");
-      } catch (...) {
-        vehicle_id = std::to_string(common::getParameter<int>(node_parameters, "vehicle_id"));
-      }
-      if (vehicle_id != "default" && !vehicle_id.empty()) {
-        parameters.push_back("vehicle_id:=" + vehicle_id);
-      }
-      // clang-format off
-      parameters.push_back("map_path:=" + configuration.map_path.string());
-      parameters.push_back("lanelet2_map_file:=" + configuration.getLanelet2MapFile());
-      parameters.push_back("pointcloud_map_file:=" + configuration.getPointCloudMapFile());
-      parameters.push_back("sensor_model:=" + common::getParameter<std::string>(node_parameters, "sensor_model"));
-      parameters.push_back("vehicle_model:=" + common::getParameter<std::string>(node_parameters, "vehicle_model"));
-      parameters.push_back("rviz_config:=" + common::getParameter<std::string>(node_parameters, "rviz_config"));
-      parameters.push_back("scenario_simulation:=true");
-      parameters.push_back("use_foa:=false");
-      parameters.push_back("perception/enable_traffic_light:=" + std::string(architecture_type >= "awf/universe/20230906" ? "true" : "false"));
-      parameters.push_back("use_sim_time:=" + std::string(common::getParameter<bool>(node_parameters, "use_sim_time", false) ? "true" : "false"));
-      parameters.push_back("localization_sim_mode:=" + std::string(common::getParameter<bool>(node_parameters, "simulate_localization") ? "api" : "pose_twist_estimator"));
-      // clang-format on
+       Upstream scenario_simulator_v2 has a single branch here, gated on
+       `architecture_type.find("awf/universe")`, and pushes Universe's argument set
+       unconditionally. Running autoware_core through it therefore required passing a Universe
+       architecture_type and silently overriding autoware_launch_package underneath -- which
+       works, but means every architecture gate in the simulator is being told a falsehood.
 
-      return common::getParameter<bool>(node_parameters, "launch_autoware", true)
-               ? concealer::ros2_launch(
-                   common::getParameter<std::string>(node_parameters, "autoware_launch_package"),
-                   common::getParameter<std::string>(node_parameters, "autoware_launch_file"),
-                   parameters)
-               : 0;
-    } else {
-      throw common::SemanticError(
-        "Unexpected architecture_type ", std::quoted(architecture_type), " was given.");
+       Here the two are separate branches with separate argument sets. Arguments that exist in
+       only one stack (use_foa, perception/enable_traffic_light for Universe; launch_rviz for
+       core) are pushed only for the stack that declares them: an undeclared argument is a hard
+       launch failure, not a warning.
+    */
+    const auto architecture_type = common::getParameter<std::string>(
+      node_parameters, "architecture_type",
+      std::string(common::architecture_type::default_architecture_type));
+
+    if (not common::architecture_type::isSupported(architecture_type)) {
+      common::architecture_type::reject(architecture_type, "EgoEntity");
     }
+
+    auto parameters =
+      common::getParameter<std::vector<std::string>>(node_parameters, "autoware.", {});
+
+    std::string vehicle_id;
+
+    try {
+      vehicle_id = common::getParameter<std::string>(node_parameters, "vehicle_id");
+    } catch (...) {
+      vehicle_id = std::to_string(common::getParameter<int>(node_parameters, "vehicle_id"));
+    }
+    if (vehicle_id != "default" && !vehicle_id.empty()) {
+      parameters.push_back("vehicle_id:=" + vehicle_id);
+    }
+
+    // Arguments both stacks declare.
+    // clang-format off
+    parameters.push_back("map_path:=" + configuration.map_path.string());
+    parameters.push_back("lanelet2_map_file:=" + configuration.getLanelet2MapFile());
+    parameters.push_back("pointcloud_map_file:=" + configuration.getPointCloudMapFile());
+    parameters.push_back("sensor_model:=" + common::getParameter<std::string>(node_parameters, "sensor_model"));
+    parameters.push_back("vehicle_model:=" + common::getParameter<std::string>(node_parameters, "vehicle_model"));
+    parameters.push_back("rviz_config:=" + common::getParameter<std::string>(node_parameters, "rviz_config"));
+    parameters.push_back("scenario_simulation:=true");
+    parameters.push_back("use_sim_time:=" + std::string(common::getParameter<bool>(node_parameters, "use_sim_time", false) ? "true" : "false"));
+    parameters.push_back("localization_sim_mode:=" + std::string(common::getParameter<bool>(node_parameters, "simulate_localization") ? "api" : "pose_twist_estimator"));
+
+    if (common::architecture_type::isCore(architecture_type)) {
+      /*
+         autoware_core has no field-operator-assistance stack and no traffic light arbiter, so
+         neither use_foa nor perception/enable_traffic_light exists to be set. It does own its
+         RViz, and autoware_core.launch.xml launches it unconditionally, which is fatal for
+         headless CI -- the profile launcher in this repo adds the argument core is missing.
+      */
+      parameters.push_back("launch_rviz:=" + std::string(common::getParameter<bool>(node_parameters, "launch_autoware_rviz", false) ? "true" : "false"));
+    } else {
+      parameters.push_back("use_foa:=false");
+      parameters.push_back("perception/enable_traffic_light:=true");
+    }
+    // clang-format on
+
+    return common::getParameter<bool>(node_parameters, "launch_autoware", true)
+             ? concealer::ros2_launch(
+                 common::getParameter<std::string>(node_parameters, "autoware_launch_package"),
+                 common::getParameter<std::string>(node_parameters, "autoware_launch_file"),
+                 parameters)
+             : 0;
   }())
 {
 }

@@ -15,6 +15,7 @@
 #ifndef SIMPLE_SENSOR_SIMULATOR__SENSOR_SIMULATION__TRAFFIC_LIGHTS__TRAFFIC_LIGHTS_DETECTOR_HPP_
 #define SIMPLE_SENSOR_SIMULATOR__SENSOR_SIMULATION__TRAFFIC_LIGHTS__TRAFFIC_LIGHTS_DETECTOR_HPP_
 
+#include <architecture_type/architecture_type.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <simulation_interface/conversions.hpp>
 #include <string>
@@ -67,7 +68,23 @@ private:
        V2ITrafficLights in TrafficSimulator publishes using architecture-independent topics ("awf/universe..."):
        "/v2x/traffic_signals" and "/perception/traffic_light_recognition/external/traffic_signals"
     */
+#if __has_include(<autoware_perception_msgs/msg/traffic_light_group_array.hpp>)
+    if (common::architecture_type::isCore(architecture_type)) {
+      /*
+         autoware_core has no traffic light arbiter: nothing merges an "internal" (recognised)
+         signal stream with an "external" (V2I) one, and its component interface manifest
+         declares exactly one traffic light interface,
+         /perception/traffic_light_recognition/traffic_signals. Publishing the simulated
+         recognition result straight onto that topic is therefore the only wiring that reaches a
+         consumer -- publishing to .../internal/... as Universe does would reach nothing.
+      */
+      using Message = autoware_perception_msgs::msg::TrafficLightGroupArray;
+      return std::make_unique<traffic_simulator::TrafficLightPublisher<Message>>(
+        &node, "/perception/traffic_light_recognition/traffic_signals");
+    } else if (architecture_type == "awf/universe") {
+#else
     if (architecture_type == "awf/universe") {
+#endif
       throw common::SemanticError(
         "This version of scenario_simulator_v2 does not support ", std::quoted(architecture_type),
         " as ", std::quoted("architecture_type"), ". Please use older version.");
@@ -84,10 +101,7 @@ private:
         &node, "/perception/traffic_light_recognition/internal/traffic_signals");
 #endif
     } else {
-      std::stringstream ss;
-      ss << "Unexpected architecture_type " << std::quoted(architecture_type)
-         << " given for traffic light.";
-      throw std::invalid_argument(ss.str());
+      common::architecture_type::reject(architecture_type, "traffic light detection");
     }
   }
 

@@ -34,35 +34,48 @@ from pathlib import Path
 from scenario_test_runner.shutdown_once import ShutdownOnce
 
 
+# Which Autoware interface generation a run targets, and which launch file describes it.
+#
+# awf/core/1.0.0 is this fork's addition and its default: autoware_core, launched through the
+# profile launcher in packages/autoware_core_scenario_launch. Keep this table in step with
+# common/architecture_type/include/architecture_type/architecture_type.hpp, which is the C++
+# side of the same decision.
+#
+# awf/universe/20250130 is the oldest Universe generation still supported here. Earlier ones
+# drove Autoware through tier4_planning_msgs/PathWithLaneId and the tier4 engage/RTC control
+# plane, neither of which this fork builds against.
+ARCHITECTURES = {
+    "awf/core/1.0.0": {
+        "package": "autoware_core_scenario_launch",
+        "file": "core_scenario_simulator.launch.xml",
+    },
+    "awf/universe/20250130": {
+        "package": "autoware_launch",
+        "file": "planning_simulator.launch.xml",
+    },
+}
+
+DEFAULT_ARCHITECTURE_TYPE = "awf/core/1.0.0"
+
+
 def architecture_types():
-    # awf/universe/20230906: autoware_perception_msgs/TrafficSignalArray for traffic lights
-    # awf/universe/20240605: autoware_perception_msgs/TrafficLightGroupArray for traffic lights
-    # awf/universe/20250130: [Pilot.Auto >= 0.41.1] autoware_internal_planning_msgs/msg/PathWithLaneId for concealer
-    return ["awf/universe/20230906", "awf/universe/20240605", "awf/universe/20250130"]
+    return list(ARCHITECTURES)
+
+
+def _architecture(architecture_type):
+    if architecture_type not in ARCHITECTURES:
+        raise KeyError(
+            f"architecture_type := {architecture_type} is not supported. Choose one of {architecture_types()}."
+        )
+    return ARCHITECTURES[architecture_type]
 
 
 def default_autoware_launch_package_of(architecture_type):
-    if architecture_type not in architecture_types():
-        raise KeyError(
-            f"architecture_type := {architecture_type} is not supported. Choose one of {architecture_types()}."
-        )
-    return {
-        "awf/universe/20230906": "autoware_launch",
-        "awf/universe/20240605": "autoware_launch",
-        "awf/universe/20250130": "autoware_launch",
-    }[architecture_type]
+    return _architecture(architecture_type)["package"]
 
 
 def default_autoware_launch_file_of(architecture_type):
-    if architecture_type not in architecture_types():
-        raise KeyError(
-            f"architecture_type := {architecture_type} is not supported. Choose one of {architecture_types()}."
-        )
-    return {
-        "awf/universe/20230906": "planning_simulator.launch.xml",
-        "awf/universe/20240605": "planning_simulator.launch.xml",
-        "awf/universe/20250130": "planning_simulator.launch.xml",
-    }[architecture_type]
+    return _architecture(architecture_type)["file"]
 
 
 def default_rviz_config_file():
@@ -71,7 +84,7 @@ def default_rviz_config_file():
 
 def launch_setup(context, *args, **kwargs):
     # fmt: off
-    architecture_type                           = LaunchConfiguration("architecture_type",                           default="awf/universe/20240605")
+    architecture_type                           = LaunchConfiguration("architecture_type",                           default=DEFAULT_ARCHITECTURE_TYPE)
     autoware_launch_file                        = LaunchConfiguration("autoware_launch_file",                        default=default_autoware_launch_file_of(architecture_type.perform(context)))
     autoware_launch_package                     = LaunchConfiguration("autoware_launch_package",                     default=default_autoware_launch_package_of(architecture_type.perform(context)))
     consider_acceleration_by_road_slope         = LaunchConfiguration("consider_acceleration_by_road_slope",         default=False)

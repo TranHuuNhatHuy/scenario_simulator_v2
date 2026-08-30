@@ -35,27 +35,37 @@
    awf/universe/20240605 and overriding the launch package underneath, which every gate happily
    accepted because each is a substring or lexicographic test that string satisfies.
 
-   This package is that one definition. It changes no accepted value and no default: it exists
-   so that the next architecture can be added by editing one file rather than by finding all
-   eight sites, and so that a rejected value produces one error message that lists what is
-   accepted.
+   This fork makes autoware_core a first-class architecture instead:
 
-   One deliberate behaviour change: the test is a prefix match rather than a substring search,
-   so " awf/universe" (leading space) is now rejected instead of silently accepted. A value that
-   only happens to contain the architecture name was never meant to pass.
+       awf/core/1.0.0        autoware_core >= 1.0, the AWF stable core interface
+       awf/universe/<date>   Autoware Universe, as upstream
+
+   The predicates below are the single definition of what those strings mean. Adding a new
+   architecture means editing this file, not grepping for `find("awf/`.
 */
 namespace common
 {
 namespace architecture_type
 {
+inline constexpr std::string_view core_prefix = "awf/core";
+
 inline constexpr std::string_view universe_prefix = "awf/universe";
 
-/// Unchanged from the value the eight call sites hard-coded before this package existed.
-inline constexpr auto default_architecture_type = "awf/universe/20240605";
+/// The architecture this fork targets by default.
+inline constexpr auto default_architecture_type = "awf/core/1.0.0";
+
+/// The oldest Universe generation this fork still speaks; earlier ones published PathWithLaneId
+/// and the RTC/engage control plane through TIER IV messages that have been removed here.
+inline constexpr auto oldest_supported_universe = "awf/universe/20250130";
 
 inline auto startsWith(const std::string & value, const std::string_view prefix) -> bool
 {
   return value.compare(0, prefix.size(), prefix) == 0;
+}
+
+inline auto isCore(const std::string & architecture_type) -> bool
+{
+  return startsWith(architecture_type, core_prefix);
 }
 
 inline auto isUniverse(const std::string & architecture_type) -> bool
@@ -65,12 +75,13 @@ inline auto isUniverse(const std::string & architecture_type) -> bool
 
 inline auto isSupported(const std::string & architecture_type) -> bool
 {
-  return isUniverse(architecture_type);
+  return isCore(architecture_type) or
+         (isUniverse(architecture_type) and oldest_supported_universe <= architecture_type);
 }
 
 inline auto supported() -> std::vector<std::string>
 {
-  return {"awf/universe/20230906", "awf/universe/20240605", "awf/universe/20250130"};
+  return {"awf/core/1.0.0", "awf/universe/20250130"};
 }
 
 /// The value in force for this process, read once from the ROS parameter of the same name.
@@ -93,7 +104,8 @@ inline auto current() -> const std::string &
   for (const auto & value : supported()) {
     what << (std::exchange(first, false) ? "" : ", ") << std::quoted(value);
   }
-  what << ".";
+  what << ". Use " << std::quoted(std::string(default_architecture_type))
+       << " to target autoware_core.";
   throw common::SemanticError(what.str());
 }
 }  // namespace architecture_type

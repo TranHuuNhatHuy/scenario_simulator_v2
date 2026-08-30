@@ -47,7 +47,12 @@ enum RandomTestType { RANDOM_RUN, REPLAY };
 enum SimulatorType { SIMPLE_SENSOR_SIMULATOR, AWSIM };
 SimulatorType simulatorTypeFromString(const std::string & simulator_type_str);
 
-enum ArchitectureType { AWF_AUTO, AWF_UNIVERSE, TIER4_PROPOSAL };
+/*
+   AWF_AUTO and TIER4_PROPOSAL are removed: both name Autoware generations that predate the
+   AD API entirely, and neither is reachable from this fork's concealer. AWF_CORE is added and
+   is the default.
+*/
+enum ArchitectureType { AWF_CORE, AWF_UNIVERSE };
 ArchitectureType architectureTypeFromString(const std::string & architecture_type_str);
 std::string stringFromArchitectureType(const ArchitectureType architecture_type);
 
@@ -58,7 +63,7 @@ struct TestControlParameters
   RandomTestType random_test_type = RandomTestType::RANDOM_RUN;
   int64_t test_count = 5;
   SimulatorType simulator_type = SimulatorType::SIMPLE_SENSOR_SIMULATOR;
-  ArchitectureType architecture_type = ArchitectureType::AWF_UNIVERSE;
+  ArchitectureType architecture_type = ArchitectureType::AWF_CORE;
   std::string simulator_host = "localhost";
   double test_timeout = 60.0;
 };

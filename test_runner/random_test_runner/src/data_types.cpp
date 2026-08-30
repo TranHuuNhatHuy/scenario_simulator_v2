@@ -14,6 +14,7 @@
 //
 // Co-developed by TIER IV, Inc. and Robotec.AI sp. z o.o.
 
+#include <architecture_type/architecture_type.hpp>
 #include "random_test_runner/data_types.hpp"
 
 SimulatorType simulatorTypeFromString(const std::string & simulator_type_str)
@@ -29,12 +30,10 @@ SimulatorType simulatorTypeFromString(const std::string & simulator_type_str)
 
 ArchitectureType architectureTypeFromString(const std::string & architecture_type_str)
 {
-  if (architecture_type_str == "awf/auto") {
-    return ArchitectureType::AWF_AUTO;
-  } else if (architecture_type_str.find("awf/universe") != std::string::npos) {
+  if (common::architecture_type::isCore(architecture_type_str)) {
+    return ArchitectureType::AWF_CORE;
+  } else if (common::architecture_type::isUniverse(architecture_type_str)) {
     return ArchitectureType::AWF_UNIVERSE;
-  } else if (architecture_type_str == "tier4/proposal") {
-    return ArchitectureType::TIER4_PROPOSAL;
   }
   throw std::runtime_error(
     fmt::format("Failed to convert {} to architecture type", architecture_type_str));
@@ -43,12 +42,10 @@ ArchitectureType architectureTypeFromString(const std::string & architecture_typ
 std::string stringFromArchitectureType(const ArchitectureType architecture_type)
 {
   switch (architecture_type) {
-    case ArchitectureType::AWF_AUTO:
-      return "awf/auto";
+    case ArchitectureType::AWF_CORE:
+      return std::string(common::architecture_type::default_architecture_type);
     case ArchitectureType::AWF_UNIVERSE:
-      return "awf/universe/20240605";
-    case ArchitectureType::TIER4_PROPOSAL:
-      return "tier4/proposal";
+      return std::string(common::architecture_type::oldest_supported_universe);
     default:
       throw std::runtime_error(fmt::format("Unknown ArchitectureType {}.", architecture_type));
   }

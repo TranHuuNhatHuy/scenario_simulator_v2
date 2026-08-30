@@ -36,38 +36,43 @@ TEST(DataTypes, simulatorTypeFromString_incorrect)
   EXPECT_THROW(simulatorTypeFromString(" awsim"), std::runtime_error);
 }
 
+/*
+   architectureTypeFromString now matches on a prefix rather than with `find`, so a value with
+   leading text is rejected instead of silently classified. The tests below pin that difference
+   down, since it is the only user-visible behaviour change in this function.
+*/
 TEST(DataTypes, architectureTypeFromString_correct)
 {
-  EXPECT_EQ(architectureTypeFromString("awf/auto"), ArchitectureType::AWF_AUTO);
+  EXPECT_EQ(architectureTypeFromString("awf/core/1.0.0"), ArchitectureType::AWF_CORE);
+  EXPECT_EQ(architectureTypeFromString("awf/core"), ArchitectureType::AWF_CORE);
   EXPECT_EQ(architectureTypeFromString("awf/universe"), ArchitectureType::AWF_UNIVERSE);
-  EXPECT_EQ(architectureTypeFromString("-awf/universe"), ArchitectureType::AWF_UNIVERSE);
+  EXPECT_EQ(architectureTypeFromString("awf/universe/20250130"), ArchitectureType::AWF_UNIVERSE);
   EXPECT_EQ(architectureTypeFromString("awf/universe-"), ArchitectureType::AWF_UNIVERSE);
   EXPECT_EQ(architectureTypeFromString("awf/universe "), ArchitectureType::AWF_UNIVERSE);
-  EXPECT_EQ(architectureTypeFromString(" awf/universe"), ArchitectureType::AWF_UNIVERSE);
-  EXPECT_EQ(architectureTypeFromString(" awf/universe "), ArchitectureType::AWF_UNIVERSE);
-  EXPECT_EQ(architectureTypeFromString("tier4/proposal"), ArchitectureType::TIER4_PROPOSAL);
 }
 
 TEST(DataTypes, architectureTypeFromString_incorrect)
 {
   EXPECT_THROW(architectureTypeFromString("unknown"), std::runtime_error);
-  EXPECT_THROW(architectureTypeFromString("awf/auto "), std::runtime_error);
-  EXPECT_THROW(architectureTypeFromString(" awf/auto"), std::runtime_error);
-  EXPECT_THROW(architectureTypeFromString("tier4/proposal "), std::runtime_error);
-  EXPECT_THROW(architectureTypeFromString(" tier4/proposal"), std::runtime_error);
+  EXPECT_THROW(architectureTypeFromString(""), std::runtime_error);
+  EXPECT_THROW(architectureTypeFromString("-awf/universe"), std::runtime_error);
+  EXPECT_THROW(architectureTypeFromString(" awf/universe"), std::runtime_error);
+  EXPECT_THROW(architectureTypeFromString(" awf/core"), std::runtime_error);
+  // Retired with the TIER IV interfaces they named.
+  EXPECT_THROW(architectureTypeFromString("awf/auto"), std::runtime_error);
+  EXPECT_THROW(architectureTypeFromString("tier4/proposal"), std::runtime_error);
 }
 
 TEST(DataTypes, stringFromArchitectureType_correct)
 {
-  EXPECT_EQ(stringFromArchitectureType(ArchitectureType::AWF_AUTO), "awf/auto");
-  EXPECT_EQ(stringFromArchitectureType(ArchitectureType::AWF_UNIVERSE), "awf/universe/20240605");
-  EXPECT_EQ(stringFromArchitectureType(ArchitectureType::TIER4_PROPOSAL), "tier4/proposal");
+  EXPECT_EQ(stringFromArchitectureType(ArchitectureType::AWF_CORE), "awf/core/1.0.0");
+  EXPECT_EQ(stringFromArchitectureType(ArchitectureType::AWF_UNIVERSE), "awf/universe/20250130");
 }
 
 TEST(DataTypes, stringFromArchitectureType_incorrect)
 {
   EXPECT_THROW(stringFromArchitectureType(static_cast<ArchitectureType>(-1)), std::runtime_error);
-  EXPECT_THROW(stringFromArchitectureType(static_cast<ArchitectureType>(3)), std::runtime_error);
+  EXPECT_THROW(stringFromArchitectureType(static_cast<ArchitectureType>(2)), std::runtime_error);
   EXPECT_THROW(stringFromArchitectureType(static_cast<ArchitectureType>(4)), std::runtime_error);
 }
 

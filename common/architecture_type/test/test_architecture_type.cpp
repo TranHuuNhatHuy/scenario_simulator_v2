@@ -17,21 +17,26 @@
 
 using namespace common::architecture_type;
 
-TEST(ArchitectureType, universe_is_recognised)
+TEST(ArchitectureType, core_is_recognised)
 {
-  EXPECT_TRUE(isUniverse("awf/universe"));
-  EXPECT_TRUE(isUniverse("awf/universe/20240605"));
-  EXPECT_TRUE(isSupported("awf/universe/20230906"));
+  EXPECT_TRUE(isCore("awf/core/1.0.0"));
+  EXPECT_FALSE(isUniverse("awf/core/1.0.0"));
+  EXPECT_TRUE(isSupported("awf/core/1.0.0"));
+}
+
+TEST(ArchitectureType, universe_is_still_recognised)
+{
+  EXPECT_TRUE(isUniverse("awf/universe/20250130"));
+  EXPECT_FALSE(isCore("awf/universe/20250130"));
   EXPECT_TRUE(isSupported("awf/universe/20250130"));
 }
 
-TEST(ArchitectureType, the_test_is_a_prefix_match_not_a_substring_search)
+TEST(ArchitectureType, universe_before_the_message_rename_is_rejected)
 {
-  // Behaviour change from the `find("awf/universe") != npos` this package replaces: a value that
-  // merely contains the architecture name no longer passes.
-  EXPECT_FALSE(isSupported(" awf/universe"));
-  EXPECT_FALSE(isSupported("-awf/universe"));
-  EXPECT_TRUE(isSupported("awf/universe-"));
+  // These releases published PathWithLaneId and the engage/RTC control plane through
+  // tier4_* messages, which this fork no longer builds against.
+  EXPECT_TRUE(isUniverse("awf/universe/20240605"));
+  EXPECT_FALSE(isSupported("awf/universe/20240605"));
 }
 
 TEST(ArchitectureType, unknown_values_are_not_supported)

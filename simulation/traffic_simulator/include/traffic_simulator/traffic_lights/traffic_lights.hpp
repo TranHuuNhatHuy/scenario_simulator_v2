@@ -24,6 +24,7 @@
 #include <autoware_perception_msgs/msg/traffic_light_group_array.hpp>
 #endif
 
+#include <architecture_type/architecture_type.hpp>
 #include <algorithm>
 #include <set>
 #include <traffic_simulator/traffic_lights/traffic_light_publisher.hpp>
@@ -160,7 +161,16 @@ private:
        "/perception/traffic_light_recognition/internal/traffic_signals" for >= "awf/universe/20230906"
        "/perception/traffic_light_recognition/traffic_signals" for "awf/universe"
     */
+#if __has_include(<autoware_perception_msgs/msg/traffic_light_group_array.hpp>)
+    if (common::architecture_type::isCore(architecture_type)) {
+      // autoware_core speaks only TrafficLightGroupArray; the topic name is the caller's.
+      return std::make_unique<
+        TrafficLightPublisher<autoware_perception_msgs::msg::TrafficLightGroupArray>>(
+        node_ptr, topic_name);
+    } else if (architecture_type == "awf/universe") {
+#else
     if (architecture_type == "awf/universe") {
+#endif
       throw common::SemanticError(
         "This version of scenario_simulator_v2 does not support ", std::quoted(architecture_type),
         " as ", std::quoted("architecture_type"), ". Please use older version.");
@@ -177,9 +187,7 @@ private:
         node_ptr, topic_name);
 #endif
     } else {
-      throw common::SemanticError(
-        "Unexpected architecture_type ", std::quoted(architecture_type),
-        " given for V2I traffic lights simulation.");
+      common::architecture_type::reject(architecture_type, "V2I traffic lights simulation");
     }
   }
 
