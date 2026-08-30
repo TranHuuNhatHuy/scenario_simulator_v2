@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>architecture_type</name>
+  <version>0.1.0</version>
+  <description>
+    Single definition of the `architecture_type` parameter: which Autoware interface generation a
+    scenario run targets, and what each accepted value means. Replaces the eight scattered
+    `find("awf/universe")` tests in upstream scenario_simulator_v2 with one predicate, which is
+    what makes `awf/core` a first-class architecture rather than a Universe impersonation.
+  </description>
+  <maintainer email="huy.tran@tier4.jp">Huy Tran</maintainer>
+  <license>Apache License 2.0</license>
+
+  <buildtool_depend>ament_cmake_auto</buildtool_depend>
+
+  <depend>get_parameter</depend>
+  <depend>scenario_simulator_exception</depend>
+
+  <test_depend>ament_cmake_gtest</test_depend>
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_common</test_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

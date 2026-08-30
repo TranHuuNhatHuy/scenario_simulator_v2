@@ -15,6 +15,7 @@
 #ifndef TRAFFIC_SIMULATOR__API__API_HPP_
 #define TRAFFIC_SIMULATOR__API__API_HPP_
 
+#include <architecture_type/architecture_type.hpp>
 #include <simulation_interface/simulation_api_schema.pb.h>
 
 #include <simulation_interface/conversions.hpp>
@@ -78,7 +79,7 @@ public:
       [this](const std::string & name) { despawn(name); }, entity_manager_ptr_,
       configuration.auto_sink_entity_types)),
     traffic_lights_ptr_(std::make_shared<TrafficLights>(
-      node, getROS2Parameter<std::string>("architecture_type", "awf/universe/20240605"))),
+      node, getROS2Parameter<std::string>("architecture_type", std::string(common::architecture_type::default_architecture_type)))),
     real_time_factor_subscriber_(rclcpp::create_subscription<std_msgs::msg::Float64>(
       node, "/real_time_factor", rclcpp::QoS(rclcpp::KeepLast(1)).best_effort(),
       [this](const std_msgs::msg::Float64 & message) {

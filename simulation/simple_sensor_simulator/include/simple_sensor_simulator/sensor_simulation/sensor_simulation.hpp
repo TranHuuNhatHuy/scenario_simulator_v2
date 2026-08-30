@@ -35,12 +35,26 @@
 #include <autoware_perception_msgs/msg/traffic_signal_array.hpp>
 #endif
 
+#include <architecture_type/architecture_type.hpp>
+
 #if __has_include(<autoware_perception_msgs/msg/traffic_light_group_array.hpp>)
 #include <autoware_perception_msgs/msg/traffic_light_group_array.hpp>
 #endif
 
 namespace simple_sensor_simulator
 {
+/*
+   The sensor bridges publish on the same topics for awf/core and awf/universe: core's
+   autoware_ground_filter reads /perception/obstacle_segmentation/pointcloud and its
+   autoware_perception_objects_converter reads /perception/object_recognition/detection/objects,
+   exactly as Universe does. What changes between architectures is only whether a consumer exists
+   -- core has no occupancy grid consumer, for instance -- and publishing into an unsubscribed
+   topic costs nothing.
+
+   So these gates are architecture *validation*, not architecture *dispatch*. Upstream spells
+   them as `find("awf/universe") != npos`, which silently accepts anything with that substring
+   and rejects awf/core; they now ask the one predicate in common/architecture_type instead.
+*/
 class SensorSimulation
 {
 public:
@@ -48,16 +62,13 @@ public:
     const double current_simulation_time,
     const simulation_api_schema::LidarConfiguration & configuration, rclcpp::Node & node) -> void
   {
-    if (configuration.architecture_type().find("awf/universe") != std::string::npos) {
+    if (common::architecture_type::isSupported(configuration.architecture_type())) {
       lidar_sensors_.push_back(std::make_unique<LidarSensor<sensor_msgs::msg::PointCloud2>>(
         current_simulation_time, configuration,
         agnocast_wrapper::create_publisher<sensor_msgs::msg::PointCloud2>(
           node, "/perception/obstacle_segmentation/pointcloud", 1)));
     } else {
-      std::stringstream ss;
-      ss << "Unexpected architecture_type " << std::quoted(configuration.architecture_type())
-         << " given.";
-      throw std::runtime_error(ss.str());
+      common::architecture_type::reject(configuration.architecture_type(), __func__);
     }
   }
 
@@ -66,7 +77,7 @@ public:
     const simulation_api_schema::DetectionSensorConfiguration & configuration, rclcpp::Node & node)
     -> void
   {
-    if (configuration.architecture_type().find("awf/universe") != std::string::npos) {
+    if (common::architecture_type::isSupported(configuration.architecture_type())) {
       using Message = autoware_perception_msgs::msg::DetectedObjects;
       using GroundTruthMessage = autoware_perception_msgs::msg::TrackedObjects;
       detection_sensors_.push_back(std::make_unique<DetectionSensor<Message>>(
@@ -75,10 +86,7 @@ public:
         node.create_publisher<GroundTruthMessage>(
           "/perception/object_recognition/ground_truth/objects", 1)));
     } else {
-      std::stringstream ss;
-      ss << "Unexpected architecture_type " << std::quoted(configuration.architecture_type())
-         << " given.";
-      throw std::runtime_error(ss.str());
+      common::architecture_type::reject(configuration.architecture_type(), __func__);
     }
   }
 
@@ -87,16 +95,13 @@ public:
     const simulation_api_schema::OccupancyGridSensorConfiguration & configuration,
     rclcpp::Node & node) -> void
   {
-    if (configuration.architecture_type().find("awf/universe") != std::string::npos) {
+    if (common::architecture_type::isSupported(configuration.architecture_type())) {
       using Message = nav_msgs::msg::OccupancyGrid;
       occupancy_grid_sensors_.push_back(std::make_unique<OccupancyGridSensor<Message>>(
         current_simulation_time, configuration,
         node.create_publisher<Message>("/perception/occupancy_grid_map/map", 1)));
     } else {
-      std::stringstream ss;
-      ss << "Unexpected architecture_type " << std::quoted(configuration.architecture_type())
-         << " given.";
-      throw std::runtime_error(ss.str());
+      common::architecture_type::reject(configuration.architecture_type(), __func__);
     }
   }
 

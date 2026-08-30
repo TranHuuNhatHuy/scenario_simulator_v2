@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <architecture_type/architecture_type.hpp>
 #include <geometry/intersection/collision.hpp>
 #include <traffic_simulator/api/api.hpp>
 
@@ -185,7 +186,7 @@ auto API::attachLidarSensor(
 {
   return attachLidarSensor(helper::constructLidarConfiguration(
     lidar_type, entity_name,
-    getROS2Parameter<std::string>("architecture_type", "awf/universe/20240605"),
+    getROS2Parameter<std::string>("architecture_type", std::string(common::architecture_type::default_architecture_type)),
     lidar_sensor_delay));
 }
 
@@ -207,7 +208,7 @@ auto API::attachDetectionSensor(
   double object_recognition_delay) -> bool
 {
   return attachDetectionSensor(helper::constructDetectionSensorConfiguration(
-    entity_name, getROS2Parameter<std::string>("architecture_type", "awf/universe/20240605"), 0.1,
+    entity_name, getROS2Parameter<std::string>("architecture_type", std::string(common::architecture_type::default_architecture_type)), 0.1,
     detection_sensor_range, detect_all_objects_in_range, pos_noise_stddev, random_seed,
     probability_of_lost, object_recognition_delay));
 }

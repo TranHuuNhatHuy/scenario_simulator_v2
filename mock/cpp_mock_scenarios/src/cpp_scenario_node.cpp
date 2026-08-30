@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <architecture_type/architecture_type.hpp>
 #include <cpp_mock_scenarios/cpp_scenario_node.hpp>
 #include <iostream>
 
@@ -124,7 +125,7 @@ auto CppScenarioNode::spawnEgoEntity(
   api_.attachOccupancyGridSensor([this] {
     simulation_api_schema::OccupancyGridSensorConfiguration configuration;
     // clang-format off
-      configuration.set_architecture_type(api_.getROS2Parameter<std::string>("architecture_type", "awf/universe/20240605"));
+      configuration.set_architecture_type(api_.getROS2Parameter<std::string>("architecture_type", std::string(common::architecture_type::default_architecture_type)));
       configuration.set_entity("ego");
       configuration.set_filter_by_range(true);
       configuration.set_height(200);
